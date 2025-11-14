@@ -13,6 +13,12 @@ This skill provides expertise in using the wasmCloud Shell (wash) CLI tool for d
 - `wash` version 2.0.0 or later (including release candidates like 2.0.0-rc.X)
 - Verify version with: `wash --version`
 
+## Important Notes
+
+**Do not use `cargo component` commands** (like `cargo component build`) when working with wasmCloud projects. Always use `wash` commands instead:
+- Use `wash build` or `wash dev` for building components
+- For plugins, build with `wash build --skip-fetch` (since wasmcloud:wash interface isn't published)
+
 ## Core Commands
 
 ### wash dev
