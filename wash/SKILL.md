@@ -48,13 +48,15 @@ wash wit update
 ## Common Workflows
 
 ### Starting a New Project
+
 1. Initialize your project
-2. Run `wash dev` to start the development loop
+2. Run `wash build` to build the code
 3. Make changes to your code
-4. wash dev will automatically rebuild
 
 ### Fixing WIT Definition Conflicts
+
 If you encounter errors about mismatched WIT definitions:
+
 1. Run `wash wit update` to synchronize definitions
 2. Review the updated WIT files
 3. Continue with `wash dev`
