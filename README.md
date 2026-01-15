@@ -17,7 +17,7 @@ A collection of Claude Code skills for WebAssembly, wasmCloud, and Rust developm
 Install all skills from this marketplace using the Claude Code CLI:
 
 ```bash
-/plugin marketplace install https://github.com/cosmonic-labs/skills
+/plugin marketplace add cosmonic-labs/skills
 ```
 
 This adds the entire marketplace and all its skills to your Claude Code environment.
