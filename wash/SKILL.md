@@ -2,6 +2,12 @@
 name: wash
 description: Expert in wasmCloud Shell (wash) CLI tool for building, running, and managing WebAssembly components and wasmCloud applications. Use this skill when working with wasmCloud, WebAssembly components, WIT (WebAssembly Interface Types) definitions, or wash commands.
 license: Apache-2.0
+tags:
+  - wasmcloud
+  - cli
+  - tooling
+  - development
+  - webassembly
 ---
 
 # wash - wasmCloud Shell
@@ -49,9 +55,10 @@ wash wit update
 
 ### Starting a New Project
 
-1. Initialize your project
-2. Run `wash build` to build the code
-3. Make changes to your code
+1. Initialize your project with `wash new https://github.com/cosmonic-labs/<TEMPLATE> --name my-project`
+2. `cd my-project`
+3. Run `wash build` to build the code
+4. Make changes to your code
 
 ### Fixing WIT Definition Conflicts
 
@@ -59,7 +66,7 @@ If you encounter errors about mismatched WIT definitions:
 
 1. Run `wash wit update` to synchronize definitions
 2. Review the updated WIT files
-3. Continue with `wash dev`
+3. Continue with `wash build`
 
 ## Additional Resources
 

@@ -1,3 +1,15 @@
+---
+name: rust-development
+description: Expert Rust development guidance covering naming conventions, type safety, error handling, documentation, and best practices based on official Rust guidelines.
+license: Apache-2.0
+tags:
+  - rust
+  - development
+  - best-practices
+  - coding-standards
+  - type-safety
+---
+
 # Rust Development
 
 This skill enforces new code or code changes to conform to proper Rust guidelines.
@@ -9,6 +21,10 @@ Activate this skill when:
 - Reviewing or modifying existing Rust code
 - Designing Rust APIs, libraries, or applications
 - Refactoring Rust codebases
+
+**Required before submitting code:**
+- All code must pass `cargo clippy -- -D warnings`
+- All code must be formatted with `cargo +nightly fmt`
 
 ## Guidelines Sources
 
@@ -199,6 +215,71 @@ serde = { version = "1", features = ["derive"], optional = true }
 pub struct MyType { }
 ```
 
+### Object Safety for Trait Objects
+
+If a trait may be useful as a trait object (`dyn Trait`), ensure it's object-safe:
+
+```rust
+// Object-safe: can be used as dyn Trait
+trait Drawable {
+    fn draw(&self);
+    fn bounds(&self) -> Rect;
+}
+
+// NOT object-safe: has generic method
+trait Processor {
+    fn process<T>(&self, item: T);  // Generics not allowed
+}
+
+// NOT object-safe: returns Self
+trait Clonable {
+    fn clone(&self) -> Self;  // Self by value not allowed
+}
+```
+
+### Only Smart Pointers Implement Deref
+
+Only implement `Deref` and `DerefMut` for smart pointer types:
+
+```rust
+// Good: Smart pointer implementing Deref
+struct MyBox<T>(T);
+
+impl<T> Deref for MyBox<T> {
+    type Target = T;
+    fn deref(&self) -> &T { &self.0 }
+}
+
+// Bad: Non-pointer type implementing Deref
+struct Email(String);
+impl Deref for Email {
+    type Target = str;  // Don't do this - use AsRef instead
+    fn deref(&self) -> &str { &self.0 }
+}
+```
+
+Use `AsRef` instead for non-pointer types that provide access to inner data.
+
+### Debug Output Should Never Be Empty
+
+`Debug` implementations should always produce meaningful output:
+
+```rust
+// Bad: Empty debug output
+impl fmt::Debug for MyType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Ok(())  // Produces nothing
+    }
+}
+
+// Good: At minimum show type name
+impl fmt::Debug for MyType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MyType").finish()
+    }
+}
+```
+
 ---
 
 ## Error Handling
@@ -275,6 +356,42 @@ let file = File::open(path)
     .with_context(|| format!("failed to open {}", path.display()))?;
 ```
 
+### Use `let ... else` for Early Returns
+
+Extract values and exit early to keep the happy path unindented:
+
+```rust
+// Bad: Nested conditionals
+fn process(value: Option<String>) -> Result<(), Error> {
+    if let Some(s) = value {
+        if !s.is_empty() {
+            // happy path buried in nesting
+            do_work(&s)?;
+        }
+    }
+    Ok(())
+}
+
+// Good: let-else keeps happy path flat
+fn process(value: Option<String>) -> Result<(), Error> {
+    let Some(s) = value else {
+        return Ok(());
+    };
+
+    if s.is_empty() {
+        return Ok(());
+    }
+
+    do_work(&s)?;
+    Ok(())
+}
+```
+
+Benefits:
+- Keeps the main logic at the top level of indentation
+- Makes early exit conditions explicit
+- Reduces rightward drift in complex functions
+
 ---
 
 ## Documentation
@@ -333,6 +450,24 @@ pub fn my_function(arg1: i32) -> Result<i32, Error> { }
 - Use `?` for error handling, not `unwrap()` or `try!`
 - Hide boilerplate with `# ` prefix
 - Ensure examples compile with `cargo test --doc`
+
+### Hide Implementation Details
+
+Use `#[doc(hidden)]` to hide internal items from documentation:
+
+```rust
+// Public but hidden from docs
+#[doc(hidden)]
+pub mod __internal {
+    // Implementation details needed by macros
+}
+
+// Hide re-exports of internal types
+#[doc(hidden)]
+pub use crate::internal::Helper;
+```
+
+Don't expose helper types, internal modules, or implementation details in public documentation.
 
 ---
 
@@ -470,6 +605,42 @@ impl MyType {
 
 Types implementing `Deref` should not add methods that might conflict with the target type.
 
+### Use Generics to Minimize Assumptions
+
+Accept generic parameters instead of concrete types when possible:
+
+```rust
+// Bad: Requires specific type
+fn read_config(file: File) -> Config { }
+
+// Good: Accepts any reader
+fn read_config(reader: impl Read) -> Config { }
+
+// Good: Accepts any string-like type
+fn greet(name: impl AsRef<str>) {
+    println!("Hello, {}", name.as_ref());
+}
+```
+
+### Validate Function Arguments
+
+Functions should validate their inputs rather than trusting callers:
+
+```rust
+// Bad: Trusts caller to validate
+fn get_element(slice: &[u8], index: usize) -> u8 {
+    slice[index]  // Panics on invalid index
+}
+
+// Good: Returns Option for invalid input
+fn get_element(slice: &[u8], index: usize) -> Option<u8> {
+    slice.get(index).copied()
+}
+
+// Good: Use types that enforce validity
+fn process_nonempty(items: NonEmpty<Item>) { }
+```
+
 ---
 
 ## Project Structure
@@ -574,6 +745,79 @@ proptest! {
 
 ---
 
+## Future Proofing
+
+### Use Private Fields
+
+Structs should have private fields to allow future changes without breaking users:
+
+```rust
+// Bad: Public fields lock in representation
+pub struct Point {
+    pub x: f64,
+    pub y: f64,
+}
+
+// Good: Private fields with accessors
+pub struct Point {
+    x: f64,
+    y: f64,
+}
+
+impl Point {
+    pub fn new(x: f64, y: f64) -> Self { Self { x, y } }
+    pub fn x(&self) -> f64 { self.x }
+    pub fn y(&self) -> f64 { self.y }
+}
+```
+
+### Sealed Traits
+
+Use sealed traits to prevent downstream implementations while allowing use:
+
+```rust
+mod private {
+    pub trait Sealed {}
+}
+
+/// This trait is sealed and cannot be implemented outside this crate.
+pub trait MyTrait: private::Sealed {
+    fn method(&self);
+}
+
+// Only types in this crate can implement MyTrait
+impl private::Sealed for MyType {}
+impl MyTrait for MyType {
+    fn method(&self) { }
+}
+```
+
+---
+
+## Dependability
+
+### Destructors Must Not Fail
+
+`Drop` implementations must not panic or fail:
+
+```rust
+impl Drop for Resource {
+    fn drop(&mut self) {
+        // Bad: Can panic
+        self.file.flush().unwrap();
+
+        // Good: Log error but don't panic
+        if let Err(e) = self.file.flush() {
+            eprintln!("warning: failed to flush: {e}");
+        }
+    }
+}
+```
+
+If cleanup can fail, provide an explicit `close()` method that returns `Result`.
+
+---
+
 ## Clippy and Formatting
 
 ### Required Clippy Lints
@@ -604,18 +848,34 @@ max_width = 100
 use_small_heuristics = "Default"
 ```
 
-### Run Before Committing
+### Required: Run Before Committing
+
+All code must pass these checks before being submitted:
 
 ```bash
-cargo +nightly fmt --check
+# Format code (required)
+cargo +nightly fmt
+
+# Check for lint errors (required - must pass with no warnings)
 cargo clippy -- -D warnings
+
+# Run tests
 cargo test
+
+# Verify docs build
 cargo doc --no-deps
 ```
+
+Code that fails clippy or is not properly formatted should not be committed.
 
 ---
 
 ## Checklist for Code Review
+
+### Required
+- [ ] Code passes `cargo clippy -- -D warnings`
+- [ ] Code is formatted with `cargo +nightly fmt`
+- [ ] Tests pass with `cargo test`
 
 ### Naming
 - [ ] Follows RFC 430 case conventions
