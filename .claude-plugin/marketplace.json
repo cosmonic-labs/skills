@@ -1,14 +1,23 @@
 {
   "name": "cosmonic-labs-skills",
   "owner": {
-    "name": "Cosmonic Labs",
+    "name": "Cosmonic",
     "email": "bailey@cosmonic.com"
   },
   "metadata": {
-    "description": "Claude Code skills for WebAssembly, wasmCloud, and Rust development",
+    "description": "Claude Code skills for WebAssembly, wasmCloud, Rust, and Cloud development",
     "version": "1.0.0"
   },
   "plugins": [
+    {
+      "name": "helm-skills",
+      "description": "Helm chart best practices, templating conventions, and Kubernetes deployment patterns",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./helm-charts"
+      ]
+    },
     {
       "name": "rust-skills",
       "description": "Rust development best practices and coding standards",
