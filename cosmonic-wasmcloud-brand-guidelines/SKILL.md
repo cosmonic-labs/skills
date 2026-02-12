@@ -1,5 +1,5 @@
 ---
-name: brand-guidelines
+name: cosmonic-wasmcloud-brand-guidelines
 description: Brand guidelines for Cosmonic and wasmCloud. Use this skill when creating visual content, presentations, websites, diagrams, or any materials that need to follow Cosmonic or wasmCloud brand standards. Includes an Excalidraw library for diagrams.
 license: Apache-2.0
 ---
