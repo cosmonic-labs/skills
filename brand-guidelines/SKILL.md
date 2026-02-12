@@ -1,6 +1,6 @@
 ---
 name: brand-guidelines
-description: Brand guidelines for Cosmonic and wasmCloud. Use this skill when creating visual content, presentations, websites, or any materials that need to follow Cosmonic or wasmCloud brand standards.
+description: Brand guidelines for Cosmonic and wasmCloud. Use this skill when creating visual content, presentations, websites, diagrams, or any materials that need to follow Cosmonic or wasmCloud brand standards. Includes an Excalidraw library for diagrams.
 license: Apache-2.0
 tags:
   - branding
@@ -8,6 +8,8 @@ tags:
   - visual-identity
   - cosmonic
   - wasmcloud
+  - excalidraw
+  - diagrams
 ---
 
 # Cosmonic & wasmCloud Brand Guidelines
@@ -127,6 +129,27 @@ module.exports = {
   },
 };
 ```
+
+## Excalidraw Diagrams
+
+When creating diagrams, use the official wasmCloud & Wasm Excalidraw library which contains reusable components including wasmCloud cluster diagrams and architecture diagram elements.
+
+**Library URL:** `https://raw.githubusercontent.com/excalidraw/excalidraw-libraries/ricochet-wasmcloud-and-wasm-1770917744834/libraries/ricochet/wasmcloud-and-wasm.excalidrawlib?raw=true`
+
+**Add to Excalidraw:** [Install Library](https://excalidraw.com/?addLibrary=https%3A%2F%2Fraw.githubusercontent.com%2Fexcalidraw%2Fexcalidraw-libraries%2Fricochet-wasmcloud-and-wasm-1770917744834%2Flibraries%2Fricochet%2Fwasmcloud-and-wasm.excalidrawlib%3Fraw%3Dtrue)
+
+### Using with Excalidraw MCP Server
+
+When drawing diagrams with the Excalidraw MCP server, always:
+
+1. **Use the wasmCloud library** — load components from the library above rather than drawing from scratch
+2. **Use wasmCloud brand colors** in all diagram elements:
+   - Primary: Green Aqua (`#00C389`) for main elements, connections, and accents
+   - Backgrounds: Light blue (`#e5f2ff`), light gray (`#f4f7fa`, `#f8f9fa`)
+   - Dark elements: Deep green (`#007054`), teal (`#00bc8e`)
+   - Text/outlines: Gunmetal (`#253746`) or Space Blue (`#002E5D`)
+   - Borders/dividers: Gainsboro (`#D9E1E2`)
+3. **Avoid default Excalidraw colors** — replace them with the brand palette above
 
 ## Usage Guidelines
 

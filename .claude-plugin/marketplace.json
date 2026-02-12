@@ -44,6 +44,15 @@
       "skills": [
         "./wash"
       ]
+    },
+    {
+      "name": "brand-guidelines",
+      "description": "Cosmonic and wasmCloud brand guidelines including colors, typography, and Excalidraw diagram library",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./brand-guidelines"
+      ]
     }
   ]
 }
