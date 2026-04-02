@@ -6,6 +6,7 @@ tags:
   - webassembly
   - component-model
   - wasi
+  - wstd
   - composition
   - troubleshooting
 ---
@@ -34,18 +35,14 @@ The WebAssembly Component Model enables:
 4. **Independent Development:** Teams can work on different components
 5. **Type Safety:** WIT ensures type-safe composition
 
-### WASI Preview1 vs Preview2
+### WASI (wasip2)
 
-| Feature | Preview1 (wasip1) | Preview2 (wasip2) |
-|---------|------------------|------------------|
-| Target | `wasm32-wasi` or `wasm32-wasip1` | `wasm32-wasip2` |
-| Networking | No native support | Native networking APIs |
-| Component Model | Not supported | Full support |
-| String Encoding | Platform-specific | UTF-8 guaranteed |
-| Async | No | In progress |
-| Maturity | Stable but deprecated | Current standard |
+The current WASI standard targets `wasm32-wasip2` (Rust 1.82+ tier-2 target):
 
-**Migration Note:** Some std library functions still use wasip1 APIs internally. Rust 1.82+ has `wasm32-wasip2` as tier-2 target.
+- **Full Component Model support**
+- **Native networking** via `wasi:http` and `wasi:sockets`
+- **UTF-8 guaranteed** string encoding
+- **Async** via `tokio` (1.50+) or `wstd`; WASIp3 (0.3) adds native async (experimental)
 
 ---
 
@@ -148,34 +145,63 @@ interface user-service {
 }
 ```
 
-### Composition Tools
+### Building Components
 
-#### wasm-tools compose
+If the project has a `.wash/config.yaml`, use `wash` to build and develop:
 
 ```bash
-# Install wasm-tools
-cargo install wasm-tools
+wash build              # Build a valid WebAssembly component
+wash dev                # Development with hot-reload
+wash build --skip-fetch
+```
 
-# Compose components
-wasm-tools compose component-a.wasm \
-    --component component-b.wasm \
-    --output composed.wasm
+`wash build` automatically:
+- Compiles to the correct `wasm32-wasip2` target
+- Handles WIT dependency fetching and binding generation
+- Respects `.wash/config.yaml` build configuration
+
+For non-wash projects, you can target wasip2
+
+```bash
+cargo build --target wasm32-wasip2 --release
+```
+
+### Composition Tools
+
+
+#### wac (WebAssembly Composition)
+
+A modern composition tool using a declarative `.wac` language:
+
+```bash
+# Install wac
+cargo install wac-cli
+
+# Quick plug: wire one component's exports into another's imports
+wac plug component-a.wasm --plug component-b.wasm -o composed.wasm
+
+# Or use a .wac composition file for complex graphs
+wac compose composition.wac -o composed.wasm
 ```
 
 #### wasmCloud Composition
 
-wasmCloud handles composition automatically via declarative manifests:
+wasmCloud handles runtime linking automatically via wRPC over NATS. Components are wired together using link definitions and deployed via `wash`.
+
+### Build Configuration with .wash/config.yaml
+
+For projects using `wash`, the `.wash/config.yaml` file in the project root configures custom build commands:
 
 ```yaml
-# wasmcloud.toml
-[[component]]
-name = "my-app"
-path = "./component-a.wasm"
+# .wash/config.yaml
+dev:
+  command: make build
 
-[[component]]
-name = "database"
-path = "./component-b.wasm"
+build:
+  command: make bindgen build
 ```
+
+This is useful for non-Rust projects (Go, TinyGo, etc.) or projects with custom build steps, controlling how `wash build` and `wash dev` invoke the build.
 
 ---
 
@@ -214,10 +240,10 @@ impl Guest for MyApp {
 
 ### Supported Languages
 
-- **Rust** - First-class support via `cargo component` or `wash build`
+- **Rust** - First-class support via `wash build`
 - **Python** - Via `componentize-py`
-- **JavaScript/TypeScript** - Via `componentize-js`
-- **Go** - Via TinyGo with component support
+- **JavaScript/TypeScript** - Via `componentize-js` (experimental, uses SpiderMonkey)
+- **Go** - Via TinyGo 0.33+ with native WASI P2 support, plus Go Component SDK
 - **C/C++** - Via WASI SDK
 - **C#** - Experimental support
 
@@ -274,49 +300,105 @@ let bytes = path.as_os_str().as_encoded_bytes(); // Don't do this!
 
 ### 3. Network Capabilities
 
-**WASI Preview1:** No native networking support.
-
-**WASI Preview2:**
+Available WASI networking interfaces:
 - `wasi:http` - HTTP client and server APIs
 - `wasi:sockets` - Low-level socket APIs
-- Not all runtimes fully implement networking yet
-
-### 4. Standard Library Gaps
-
-Not all Rust standard library has migrated to WASIp2 APIs:
-
-**Still Using WASIp1:**
-- File descriptors
-- Filesystem APIs (partially)
-- Some environment variable handling
-
-**Using WASIp2:**
-- Most CLI interactions
-- String/path handling
-- Process arguments
-
-**Implication:** Even when targeting `wasm32-wasip2`, you're using a mix of preview1 and preview2 APIs.
-
-### 5. Dependency Management
-
-**Problem:** Intentional duplicate dependencies cause confusion.
-
-- `wasm32-wasip1` depends on `wasi` crate v0.11
-- `wasm32-wasip2` depends on `wasi` crate v0.14
-
-**Solution:** This is expected - let cargo handle the dual dependencies.
 
 ---
 
-## Part 5: Runtime Compatibility
+## Part 5: Async in WebAssembly Components
 
-### WASI Adapters
+### Tokio on wasip2
 
-WASI adapters bridge the gap between different WASI versions:
+As of tokio 1.50+, tokio supports `wasm32-wasip2` networking. This means you can use tokio's async runtime and networking APIs in WebAssembly components.
 
-- **Purpose:** Implement WASI Preview 1 APIs in terms of WASI Preview 2 APIs
-- **Used by:** Components built with `wasm32-wasip1` target
-- **Cost:** Runtime indirection and instantiation overhead
+**Requirements:**
+- tokio 1.50+
+- Build with `RUSTFLAGS="--cfg tokio_unstable"` (required until stabilized)
+
+```toml
+# Cargo.toml
+[dependencies]
+tokio = { version = "1.50", features = ["rt", "net", "macros", "time", "io-util", "sync"] }
+```
+
+```bash
+# Build with wash (tokio_unstable flag required)
+RUSTFLAGS="--cfg tokio_unstable" wash build
+```
+
+**What works on wasip2:**
+- `tokio::net::TcpListener`, `TcpStream` — full async TCP networking
+- `tokio::time` — timers and delays
+- `tokio::sync` — channels, mutexes, etc.
+- `tokio::io` — async I/O utilities
+- Single-threaded runtime (`rt` feature)
+
+**What does NOT work yet:**
+- `tokio::net::lookup_host` — DNS lookups require multithreading workaround
+- `tokio::fs` — async file I/O (may work with future WASIp3 threading)
+- Multi-threaded runtime (`rt-multi-thread`) — WASI has no threading support yet
+- `tokio::process` — no process spawning in WASI
+
+```rust
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    loop {
+        let (stream, _addr) = listener.accept().await.unwrap();
+        tokio::spawn(async move {
+            handle_connection(stream).await;
+        });
+    }
+}
+```
+
+### wstd
+
+[wstd](https://github.com/bytecodealliance/wstd) is a lightweight, WebAssembly-native async standard library built specifically for WASI 0.2. It provides a minimal async runtime, HTTP, networking, and other APIs purpose-built for the Wasm component model.
+
+```toml
+# Cargo.toml
+[dependencies]
+wstd = "0.6"
+```
+
+**When to use wstd over tokio:**
+- You want a minimal, Wasm-native dependency with no `tokio_unstable` flag required
+- You need `wstd::http` client/server APIs (higher-level than raw TCP)
+- You want `wstd::rand` for random number generation in Wasm
+- You prefer a purpose-built Wasm library over a general-purpose runtime
+
+| Module | Purpose | Example Types |
+|--------|---------|---------------|
+| `wstd::http` | HTTP client and server | `Client`, `Server` |
+| `wstd::io` | Async I/O abstractions | Read, Write traits |
+| `wstd::net` | Async TCP networking | `TcpListener` |
+| `wstd::time` | Async time interfaces | `Duration`, `Instant` |
+| `wstd::rand` | Random number generation | `thread_rng()` |
+| `wstd::runtime` | Async event loop | Task spawning |
+
+```rust
+#[wstd::main]
+async fn main() {
+    let client = wstd::http::Client::new();
+    let response = client.get("https://example.com").await.unwrap();
+    println!("Status: {}", response.status());
+}
+```
+
+```rust
+#[wstd::http_server]
+async fn handle(request: wstd::http::IncomingRequest) -> wstd::http::Response {
+    wstd::http::Response::new(200, "Hello, World!")
+}
+```
+
+**Note:** wstd defines its own I/O traits separate from tokio — do not mix wstd and tokio in the same component.
+
+---
+
+## Part 6: Runtime Compatibility
 
 ### Unknown Import Errors
 
@@ -348,8 +430,8 @@ wasmtime run component.wasm 2>&1 | grep "unknown import"
 # Solution 1: Update runtime
 cargo install wasmtime-cli --version 18.0.0
 
-# Solution 2: Update component WIT definitions
-wash wit update
+# Solution 2: Re-fetch WIT dependencies
+wkg wit fetch
 
 # Solution 3: Remove dependency on unsupported interface
 ```
@@ -358,12 +440,16 @@ wash wit update
 
 #### wasmtime
 
-- wasmtime 13+: WASI Preview 2 (0.2.0) support
-- wasmtime 18+: Full WASI 0.2 implementation
+- Full WASI 0.2 support (stable)
+- WASI 0.3 (WASIp3) support is experimental — adds native async
 
 ```bash
-wasmtime run --wasi preview2 component.wasm
-wasmtime serve component.wasm  # For HTTP components
+wasmtime run component.wasm
+wasmtime serve component.wasm                          # HTTP components
+wasmtime serve -S cli component.wasm                   # Enable wasi:cli (env vars, filesystem, sockets, clocks)
+wasmtime serve -S cli,inherit-network component.wasm   # Full host network access within the guest
+wasmtime serve -S cli,allow-ip-name-lookup component.wasm # Enable wasi:sockets/ip-name-lookup
+wasmtime serve -S p3 component.wasm                    # Enable WASIp3 (experimental)
 ```
 
 #### wasmCloud
@@ -373,32 +459,7 @@ wasmtime serve component.wasm  # For HTTP components
 - `wasmcloud:wash` interface not published (use `wash build --skip-fetch` for plugins)
 
 ```bash
-wash dev      # Development testing
-wash up       # Run wasmCloud host
-wash app deploy wadm.yaml
-```
-
-#### WasmEdge
-
-- WASI Preview 1: Full support
-- WASI Preview 2: Partial support (actively developing)
-
-### Building Custom Adapters
-
-When the built-in adapter doesn't match your runtime:
-
-```toml
-# Cargo.toml
-[package.metadata.component]
-adapter = "path/to/custom-adapter.wasm"
-```
-
-```bash
-# Build adapter from wasmtime source
-git clone https://github.com/bytecodealliance/wasmtime.git
-cd wasmtime && git checkout v18.0.0
-cd crates/wasi-preview1-component-adapter
-cargo build --release --target wasm32-unknown-unknown
+wash dev      # Development testing with hot-reload
 ```
 
 ### Version Alignment Strategies
@@ -430,7 +491,7 @@ mod http_impl { /* Fallback implementation */ }
 
 ---
 
-## Part 6: Testing Strategies
+## Part 7: Testing Strategies
 
 ### 1. Lightweight Host Harness
 
@@ -473,7 +534,7 @@ impl database::client::Query for MockDatabase {
 
 ```bash
 wash dev  # Start development environment
-wash call my-component my-function '{"param": "value"}'
+curl http://localhost:8080/api/test  # Test the component's HTTP interface
 ```
 
 ### 4. Feature Flags for Host-Specific Code
@@ -519,7 +580,7 @@ fn test_with_filesystem() -> Result<()> {
 
 ---
 
-## Part 7: Debugging
+## Part 8: Debugging
 
 ### Debugging Workflow
 
@@ -528,9 +589,11 @@ fn test_with_filesystem() -> Result<()> {
    rustc --print target-list | grep wasi
    ```
 
-2. **Validate WIT interfaces:**
+2. **Fetch WIT dependencies:**
    ```bash
-   wash wit update
+   # WIT deps are fetched automatically by wash build
+   # For manual management, use the wkg CLI
+   wkg wit fetch
    ```
 
 3. **Inspect component imports:**
@@ -547,7 +610,7 @@ fn test_with_filesystem() -> Result<()> {
 |-------|-------|----------|
 | "operation not supported on this platform" | Threading issue | Remove threaded dependencies |
 | "unknown import: wasi:cli/..." | Runtime doesn't support interface | Update runtime or remove dependency |
-| WIT version mismatch | Version conflict | Run `wash wit update` |
+| WIT version mismatch | Version conflict | Re-fetch deps with `wkg wit fetch` or rebuild with `wash build` |
 | Component instantiation failed | Adapter/runtime incompatibility | Check adapter version |
 
 ### Tools
@@ -568,7 +631,7 @@ wash inspect component.wasm
 
 ---
 
-## Part 8: Performance Optimization
+## Part 9: Performance Optimization
 
 ### Minimize Cross-Component Calls
 
@@ -606,14 +669,22 @@ database.insert_batch(items)?;
 
 ---
 
-## Part 9: Best Practices
+## Part 10: Best Practices
+
+### Documentation References
+
+- **wasmCloud docs:** Always use https://wasmcloud.com/docs/ — do NOT use v1 docs (`/docs/v1/`), which are outdated
+- **wstd docs:** https://docs.rs/wstd/latest/wstd/
+- **Component Model:** https://component-model.bytecodealliance.org/
 
 ### Development
 
-1. **Avoid Threading:** Design for single-threaded execution
-2. **Use UTF-8:** Don't rely on platform-specific encodings
-3. **Minimal Dependencies:** Fewer dependencies = fewer WASI compatibility issues
-4. **Test Early:** Run components in target runtime during development
+1. **Use `wash build`** when the project has `.wash/config.yaml`; otherwise use `wasm-tools component new` to produce a component
+2. **Avoid Threading:** Design for single-threaded execution
+3. **Use UTF-8:** Don't rely on platform-specific encodings
+4. **Minimal Dependencies:** Fewer dependencies = fewer WASI compatibility issues
+5. **Test Early:** Run components in target runtime during development
+6. **Async options:** Use `tokio` (1.50+, with `--cfg tokio_unstable`) or `wstd` for async in Wasm components
 
 ### Component Design
 
@@ -688,7 +759,7 @@ world data-pipeline {
 ## Summary
 
 - **Component Model** enables language-agnostic, composable WebAssembly applications
-- **WASI Preview2** is the current standard with full networking and UTF-8 guarantees
+- **WASI 0.2 (wasip2)** is the current standard with full networking and UTF-8 guarantees
 - **Design coarse-grained interfaces** for better performance
 - **Test in target runtime** early and often
 - **Use `wash build`** for wasmCloud projects - handles compatibility automatically
