@@ -1,52 +1,24 @@
 ---
 name: webassembly-component-development
-description: Comprehensive guide to WebAssembly component development covering WASI fundamentals, component composition patterns, language interoperability, runtime compatibility, and troubleshooting.
+description: "WebAssembly component development covering WIT interface definitions, component composition with wac, WASI 0.2 (wasip2) APIs, async patterns with tokio/wstd, runtime compatibility, and debugging. Use when building Wasm components, defining WIT interfaces, composing WebAssembly modules, configuring WASI runtimes, or debugging component linking issues."
 license: Apache-2.0
-tags:
-  - webassembly
-  - component-model
-  - wasi
-  - wstd
-  - composition
-  - troubleshooting
+metadata:
+  tags:
+    - webassembly
+    - component-model
+    - wasi
+    - wstd
+    - composition
+    - troubleshooting
 ---
 
 # WebAssembly Component Development
 
-This skill provides comprehensive expertise in developing WebAssembly components, including WASI fundamentals, composition patterns, runtime compatibility, and troubleshooting.
+Current WASI standard targets `wasm32-wasip2` (Rust 1.82+ tier-2 target) with full Component Model support, native networking via `wasi:http`/`wasi:sockets`, UTF-8 guaranteed strings, and async via `tokio` (1.50+) or `wstd`.
 
 ---
 
-## Part 1: Core Concepts
-
-### What is the Component Model?
-
-The WebAssembly Component Model enables:
-- Combining multiple components into a single application
-- Using libraries written in one language from another language
-- Building modular, reusable WebAssembly modules
-- Creating component graphs with defined dependencies
-
-### Benefits
-
-1. **Language Interoperability:** Use the best language for each task
-2. **Code Reuse:** Share components across projects
-3. **Modularity:** Clear boundaries and interfaces
-4. **Independent Development:** Teams can work on different components
-5. **Type Safety:** WIT ensures type-safe composition
-
-### WASI (wasip2)
-
-The current WASI standard targets `wasm32-wasip2` (Rust 1.82+ tier-2 target):
-
-- **Full Component Model support**
-- **Native networking** via `wasi:http` and `wasi:sockets`
-- **UTF-8 guaranteed** string encoding
-- **Async** via `tokio` (1.50+) or `wstd`; WASIp3 (0.3) adds native async (experimental)
-
----
-
-## Part 2: Component Composition
+## Component Composition
 
 ### Composition Patterns
 
@@ -130,20 +102,7 @@ interface user-service {
 }
 ```
 
-**Poor Boundaries (Anti-patterns):**
-- Too fine-grained (many small operations)
-- Tight coupling (components know too much about each other)
-- Chatty interfaces (many back-and-forth calls)
-
-```wit
-// Bad: Too fine-grained, chatty interface
-interface user-service {
-    set-user-name: func(id: user-id, name: string);
-    get-user-name: func(id: user-id) -> string;
-    set-user-email: func(id: user-id, email: string);
-    get-user-email: func(id: user-id) -> string;
-}
-```
+**Avoid:** Fine-grained, chatty interfaces with many small operations — prefer coarse-grained interfaces with fewer, larger operations.
 
 ### Building Components
 
@@ -754,13 +713,3 @@ world data-pipeline {
 }
 ```
 
----
-
-## Summary
-
-- **Component Model** enables language-agnostic, composable WebAssembly applications
-- **WASI 0.2 (wasip2)** is the current standard with full networking and UTF-8 guarantees
-- **Design coarse-grained interfaces** for better performance
-- **Test in target runtime** early and often
-- **Use `wash build`** for wasmCloud projects - handles compatibility automatically
-- **Document runtime requirements** and maintain compatibility matrices
