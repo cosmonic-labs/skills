@@ -1,38 +1,21 @@
 ---
 name: rust-development
-description: Expert Rust development guidance covering naming conventions, type safety, error handling, documentation, and best practices based on official Rust guidelines.
+description: "Rust development conventions covering RFC 430 naming, newtype patterns, error handling with thiserror/anyhow, trait implementations, clippy/rustfmt configuration, and code review checklists. Use when writing, reviewing, or refactoring Rust code, designing Rust APIs, configuring cargo clippy or rustfmt, or reviewing .rs files for idiomatic patterns."
 license: Apache-2.0
-tags:
-  - rust
-  - development
-  - best-practices
-  - coding-standards
-  - type-safety
+metadata:
+  tags:
+    - rust
+    - development
+    - best-practices
+    - coding-standards
+    - type-safety
 ---
 
 # Rust Development
 
-This skill enforces new code or code changes to conform to proper Rust guidelines.
-
-## When to Use
-
-Activate this skill when:
-- Writing new Rust code
-- Reviewing or modifying existing Rust code
-- Designing Rust APIs, libraries, or applications
-- Refactoring Rust codebases
-
 **Required before submitting code:**
 - All code must pass `cargo clippy -- -D warnings`
 - All code must be formatted with `cargo +nightly fmt`
-
-## Guidelines Sources
-
-These guidelines are based on:
-- [Microsoft Rust Guidelines](https://microsoft.github.io/rust-guidelines/)
-- [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
-- [The Rust Programming Language Book](https://doc.rust-lang.org/book/)
-- Rust community best practices
 
 ---
 

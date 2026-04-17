@@ -1,18 +1,17 @@
 ---
 name: wash
-description: Expert in wasmCloud Shell (wash) CLI tool for building, running, and managing WebAssembly components and wasmCloud applications. Use this skill when working with wasmCloud, WebAssembly components, WIT (WebAssembly Interface Types) definitions, or wash commands.
+description: "wasmCloud Shell (wash) CLI for building, running, and managing WebAssembly components — scaffolding projects, hot-reload development, WIT dependency management, and component deployment. Use when working with wasmCloud, wash commands, WebAssembly components, WIT definitions, or component plugins."
 license: Apache-2.0
-tags:
-  - wasmcloud
-  - cli
-  - tooling
-  - development
-  - webassembly
+metadata:
+  tags:
+    - wasmcloud
+    - cli
+    - tooling
+    - development
+    - webassembly
 ---
 
 # wash - wasmCloud Shell
-
-This skill provides expertise in using the wasmCloud Shell (wash) CLI tool for developing and managing WebAssembly components and wasmCloud applications.
 
 ## Prerequisites
 
@@ -29,47 +28,36 @@ This skill provides expertise in using the wasmCloud Shell (wash) CLI tool for d
 
 ### wash dev
 
-Use `wash dev` for local development and build loop. This command:
-- Automatically rebuilds your component on file changes
-- Provides a fast iteration cycle during development
-- Watches for changes and recompiles as needed
+Hot-reload development loop — rebuilds your component automatically on file changes:
 
-Example:
 ```bash
 wash dev
+# Expected: "watching for changes..." output, component accessible at localhost
 ```
 
 ### wash wit update
 
-Use `wash wit update` when there are mismatched WIT (WebAssembly Interface Types) definitions. This command:
-- Updates WIT dependencies to resolve conflicts
-- Synchronizes WIT definitions across your project
-- Fixes version mismatches in component interfaces
+Resolves mismatched WIT (WebAssembly Interface Types) definitions:
 
-Example:
 ```bash
 wash wit update
+# Fixes version mismatches in wit/deps/ — re-run wash build after
 ```
 
 ## Common Workflows
 
 ### Starting a New Project
 
-1. Initialize your project with `wash new https://github.com/cosmonic-labs/<TEMPLATE> --name my-project`
-2. `cd my-project`
-3. Run `wash build` to build the code
-4. Make changes to your code
+1. `wash new component hello --template-name hello-world-rust` — scaffold from a template
+2. `wash build` — compile to a valid WebAssembly component
+3. Verify: check for `.wasm` output in `build/`
+4. `wash dev` — start hot-reload development loop
 
 ### Fixing WIT Definition Conflicts
 
 If you encounter errors about mismatched WIT definitions:
 
-1. Run `wash wit update` to synchronize definitions
-2. Review the updated WIT files
-3. Continue with `wash build`
-
-## Additional Resources
-
-- wash is the primary CLI tool for the wasmCloud ecosystem
-- It handles component building, testing, and deployment
-- Supports both local development and production workflows
+1. `wash wit update` — synchronize WIT dependencies
+2. Review changes in `wit/deps/`
+3. `wash build` — verify the build succeeds
+4. If the error persists, check specific WIT versions in `wit/deps/` and pin compatible versions

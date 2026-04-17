@@ -1,31 +1,17 @@
 ---
 name: helm-best-practices
-description: Expert guidance for authoring and maintaining Helm charts following standardized conventions, global registry support, templating best practices, and Kubernetes deployment patterns.
+description: "Helm chart best practices for global registry overrides, Go template patterns, ct/helmfile workflows, CRD management, RBAC configuration, and standard Kubernetes labels. Use when reviewing Helm chart quality, enforcing registry override patterns, running helm lint or ct lint, configuring values.yaml, or managing multi-chart deployments with Helmfile."
 license: Apache-2.0
-tags:
-  - helm
-  - kubernetes
-  - devops
-  - deployment
-  - charts
+metadata:
+  tags:
+    - helm
+    - kubernetes
+    - devops
+    - deployment
+    - charts
 ---
 
 # Helm Chart Style Guide
-
-This skill provides standardized conventions for authoring and maintaining Helm charts, with a focus on:
-
-- Global registry override using `.Values.global.image.registry`
-- Clear, minimal templating
-- Consistent `image:` blocks for all containers
-
-## When to Use
-
-Activate this skill when:
-
-- Creating new Helm charts
-- Reviewing or modifying existing Helm charts
-- Configuring image registries for air-gapped environments
-- Setting up multi-chart deployments with Helmfile
 
 ## Image Configuration Best Practices
 
@@ -36,8 +22,6 @@ global:
   image:
     registry: registry.mycompany.com
 ```
-
-This enables centralized control of image sources across all dependencies and microservices.
 
 ### Consistent Image Blocks
 
@@ -86,9 +70,10 @@ Template **only when necessary**. Keep templates readable and manageable by avoi
 
 ## Linting & Validation
 
-- Run `helm lint` before commits
-- Use `helm template` for rendering checks
-- Ensure `values.yaml` and `Chart.yaml` are fully in sync with templated expectations
+1. Run `helm lint .` — fix all errors and warnings before proceeding
+2. Run `helm template . | kubectl apply --dry-run=client -f -` — verify rendered manifests are valid
+3. Run `ct lint --all` — validate chart structure and values
+4. If any step fails, fix the issues and re-run from step 1
 
 ## Automated Chart Testing with ct
 
