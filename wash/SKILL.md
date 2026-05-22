@@ -2,12 +2,6 @@
 name: wash
 description: Expert in wasmCloud Shell (wash) CLI tool for building, running, and managing WebAssembly components and wasmCloud applications. Use this skill when working with wasmCloud, WebAssembly components, WIT (WebAssembly Interface Types) definitions, or wash commands.
 license: Apache-2.0
-tags:
-  - wasmcloud
-  - cli
-  - tooling
-  - development
-  - webassembly
 ---
 
 # wash - wasmCloud Shell
@@ -16,7 +10,7 @@ This skill provides expertise in using the wasmCloud Shell (wash) CLI tool for d
 
 ## Prerequisites
 
-- `wash` version 2.0.0 or later (including release candidates like 2.0.0-rc.X)
+- `wash` version 2.0.0 or later
 - Verify version with: `wash --version`
 
 ## Important Notes
