@@ -1,13 +1,7 @@
 ---
 name: helm-charts
-description: Expert guidance for authoring and maintaining Helm charts following standardized conventions, global registry support, templating best practices, and Kubernetes deployment patterns.
+description: Expert guidance for authoring and maintaining Helm charts following standardized conventions, global registry support, templating best practices, and Kubernetes deployment patterns. Use this skill when creating new Helm charts, reviewing or modifying existing charts, configuring image registries for air-gapped environments, setting up multi-chart deployments with Helmfile, or whenever the user mentions Helm, Chart.yaml, values.yaml, helmfile, or Kubernetes manifest templating.
 license: Apache-2.0
-tags:
-  - helm
-  - kubernetes
-  - devops
-  - deployment
-  - charts
 ---
 
 # Helm Chart Style Guide
