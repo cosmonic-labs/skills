@@ -47,12 +47,32 @@ wash wit update
 
 ## Common Workflows
 
-### Starting a New Project
+### Starting a New Project using the HTTP Hello World template
 
-1. Initialize your project with `wash new https://github.com/cosmonic-labs/<TEMPLATE> --name my-project`
+1. `wash new https://github.com/wasmCloud/wasmCloud.git --name http-hello-world --subfolder templates/http-hello-world`
 2. `cd my-project`
 3. Run `wash build` to build the code
 4. Make changes to your code
+
+### Expected Component Structure
+
+A modern `wash new` Rust HTTP component can follow this structure:
+
+```text
+|
+|-- .wash/
+|   -- config.yaml
+|-- manifests/
+|   -- workloaddeployment.yaml
+|-- src/
+|   -- lib.rs
+|-- wit/
+|   -- world.wit
+|-- Cargo.toml
+|-- Cargo.lock
+|-- wkg.lock
+|-- README.md
+```
 
 ### Fixing WIT Definition Conflicts
 
