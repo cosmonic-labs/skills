@@ -24,6 +24,7 @@
 |-------|-------------|------|
 | [wash](./wash) | wasmCloud Shell CLI tool for building and managing WebAssembly components | `wasmcloud` `cli` `tooling` |
 | [webassembly-component-development](./webassembly-component-development) | Comprehensive guide to WebAssembly components: WASI, composition patterns, language interop, runtime compatibility, and troubleshooting | `webassembly` `component-model` `wasi` |
+| [wit-interface-design](./wit-interface-design) | Rules for designing WIT interfaces as capability grants: variant/other enums, singular resources, naming, errors | `wit` `component-model` `wasi` |
 | [rust-development](./rust-development) | Expert Rust development guidance covering naming conventions, type safety, error handling, and best practices | `rust` `development` `best-practices` |
 | [brand-guidelines](./brand-guidelines) | Official Cosmonic and wasmCloud brand colors, typography, and visual identity standards | `branding` `design` `cosmonic` `wasmcloud` |
 

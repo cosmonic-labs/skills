@@ -2,7 +2,7 @@
 
 ## Contents
 
-- Composition Patterns: Simple Dependency, Adapter, Middleware, Facade
+- Composition patterns: simple dependency, adapter, middleware, facade
 - Designing Component Boundaries
 - Building Components (`wash build`, raw `cargo`)
 - Composition Tools: `wac`, wasmCloud
@@ -10,100 +10,25 @@
 
 ## Composition Patterns
 
-### 1. Simple Dependency
+Design the WIT for each of these with the `wit-interface-design` skill. This file covers only what each pattern is for.
 
-One component depends on another component's interface.
-
-```wit
-// component-a/wit/world.wit
-package example:component-a;
-
-interface math {
-    add: func(a: s32, b: s32) -> s32;
-}
-
-world component-a {
-    export math;
-}
-```
-
-```wit
-// component-b/wit/world.wit
-package example:component-b;
-
-world component-b {
-    import example:component-a/math;
-    export calculate: func(x: s32, y: s32) -> s32;
-}
-```
-
-### 2. Adapter Pattern
-
-Adapting one interface to another for compatibility.
-
-```wit
-world adapter {
-    import old-api/interface;
-    export new-api/interface;
-}
-```
-
-### 3. Middleware Pattern
-
-Components that intercept and process data between other components.
-
-```wit
-world http-logger {
-    import wasi:http/incoming-handler;
-    export wasi:http/outgoing-handler;
-    // Logs all HTTP requests/responses
-}
-```
-
-### 4. Facade Pattern
-
-Single component providing simplified access to multiple components.
-
-```wit
-world application-facade {
-    import database/client;
-    import cache/client;
-    import auth/service;
-    export api/handler;
-}
-```
+1. **Simple dependency:** one component imports an interface another exports. `wac plug` wires them together.
+2. **Adapter:** a component imports one interface and exports a different one, translating between them, so unmodified components stay compatible.
+3. **Middleware:** a component imports and exports the *same* interface (for HTTP, import `wasi:http/handler` and export `wasi:http/handler`, as in the `middleware` world). Because both sides share a shape, middleware chain freely: logging, auth, caching, rate limiting.
+4. **Facade:** one component imports several narrow capabilities and exports a simpler API over them.
 
 ## Designing Component Boundaries
 
-**Good Boundaries:**
-- Clear, well-defined responsibilities
-- Minimal coupling between components
-- Coarse-grained interfaces (fewer, larger operations)
-- Domain-aligned (matches business/technical domains)
+Good boundaries:
+- One clear responsibility per component
+- Minimal coupling; components depend on interfaces, never on each other's internals
+- Narrow, single-capability interfaces, with coarse operations inside each one
+- Domain-aligned
 
-```wit
-// Good: Clear, focused interface
-interface user-service {
-    create-user: func(name: string, email: string) -> result<user-id, error>;
-    get-user: func(id: user-id) -> result<user, error>;
-    update-user: func(id: user-id, updates: user-updates) -> result<_, error>;
-}
-```
-
-**Poor Boundaries (Anti-patterns):**
-- Too fine-grained (many small operations)
-- Tight coupling (components know too much about each other)
-- Chatty interfaces (many back-and-forth calls)
-
-```wit
-// Bad: Too fine-grained, chatty interface
-interface user-service {
-    set-user-name: func(id: user-id, name: string);
-    get-user-name: func(id: user-id) -> string;
-    set-user-email: func(id: user-id, email: string);
-    get-user-email: func(id: user-id) -> string;
-}
-```
+Anti-patterns:
+- Chatty interfaces: many small back-and-forth calls across the boundary. Batch, or return records and streams.
+- Wide catch-all interfaces that grant more than a caller needs
+- Components that assume who implements their imports (host, plugin or peer)
 
 ## Building Components
 
@@ -116,14 +41,15 @@ wash build --skip-fetch
 ```
 
 `wash build` automatically:
-- Compiles to the correct `wasm32-wasip2` target
+- Compiles to the correct `wasm32-wasip3` target
 - Handles WIT dependency fetching and binding generation
 - Respects `.wash/config.yaml` build configuration
 
-For non-wash projects, you can target wasip2:
+For non-wash projects, target wasip3 (or wasip2 as a fallback):
 
 ```bash
-cargo build --target wasm32-wasip2 --release
+cargo build --target wasm32-wasip3 --release
+cargo build --target wasm32-wasip2 --release   # fallback
 ```
 
 ## Composition Tools
@@ -143,9 +69,9 @@ wac plug component-a.wasm --plug component-b.wasm -o composed.wasm
 wac compose composition.wac -o composed.wasm
 ```
 
-### wasmCloud Composition
+### wasmCloud
 
-wasmCloud handles runtime linking automatically via wRPC over NATS. Components are wired together using link definitions and deployed via `wash`.
+wasmCloud deploys components as workloads and wires their imports to hosts, plugins or other components. Deploy with `wash` and the wasmCloud docs at https://wasmcloud.com/docs/.
 
 ## Build Configuration with .wash/config.yaml
 
