@@ -33,7 +33,8 @@
       "source": "./",
       "strict": false,
       "skills": [
-        "./webassembly-component-development"
+        "./webassembly-component-development",
+        "./wit-interface-design"
       ]
     },
     {
